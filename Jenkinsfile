@@ -6,6 +6,10 @@ pipeline {
         pollSCM('H/5 * * * *')
     }
 
+    tools {
+    nodejs "NodeJS-20"   // ชื่อต้องตรงกับที่ตั้งใน Jenkins
+    }
+
     environment {
         PNPM_HOME = "$HOME/.local/share/pnpm"
         PATH = "$PNPM_HOME:$PATH"
