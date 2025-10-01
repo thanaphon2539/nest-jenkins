@@ -26,7 +26,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh 'corepack enable'
-                sh 'pnpm install --frozen-lockfile'
+                sh 'pnpm install'
             }
         }
 
