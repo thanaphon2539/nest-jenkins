@@ -1,16 +1,19 @@
+version: '3.9'
 services:
   jenkins:
     build:
       context: .
       dockerfile: Dockerfile.jenkins
-    image: jenkins-docker:lts # 👈 ตั้งชื่อใหม่
+    image: jenkins-docker:lts
     container_name: jenkins
+    user: root
+    environment:
+      DOCKER_HOST: tcp://host.docker.internal:2375
     ports:
-      - '8080:8080'
-      - '50000:50000'
+      - "8080:8080"
+      - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
 
   nestapp:
@@ -18,7 +21,7 @@ services:
     container_name: nestapp
     command: ['pnpm', 'start:prod']
     ports:
-      - '3005:3005'
+      - "3005:3005"
     restart: unless-stopped
 
 volumes:
