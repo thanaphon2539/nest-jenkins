@@ -18,10 +18,15 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/thanaphon2539/nest-jenkins.git'
+                checkout([$class: 'GitSCM',
+                branches: [[name: '*/main']],
+                doGenerateSubmoduleConfigurations: false,
+                extensions: [[$class: 'WipeWorkspace']],   // เคลียร์ก่อน
+                userRemoteConfigs: [[url: 'https://github.com/thanaphon2539/nest-jenkins.git']]
+                ])
             }
         }
+
 
         stage('Install Dependencies') {
             steps {
