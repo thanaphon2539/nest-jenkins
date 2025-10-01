@@ -18,7 +18,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
+                git branch: 'origin/main',
                     url: 'https://github.com/thanaphon2539/nest-jenkins.git'
             }
         }
@@ -50,7 +50,7 @@ pipeline {
 
         stage('Deploy Local Container') {
             when {
-                branch 'main'
+                branch 'origin/main'
             }
             steps {
                 sh '''
