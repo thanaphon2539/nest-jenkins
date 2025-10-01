@@ -1,8 +1,9 @@
+# Dockerfile.jenkins
 FROM jenkins/jenkins:lts
 
 USER root
 
-# ติดตั้ง dependency พื้นฐาน
+# เบสิค deps
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     curl \
@@ -10,21 +11,29 @@ RUN apt-get update && apt-get install -y \
     lsb-release \
     && rm -rf /var/lib/apt/lists/*
 
-# เพิ่ม Docker official GPG key
+# Docker official key + repo (required เพื่อ apt install docker-cli)
 RUN mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://download.docker.com/linux/debian/gpg | tee /etc/apt/keyrings/docker.asc > /dev/null \
-    && chmod a+r /etc/apt/keyrings/docker.asc
+    && chmod a+r /etc/apt/keyrings/docker.asc \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
+       | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# เพิ่ม repo ของ Docker
-RUN echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
-  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-# ติดตั้ง Docker CLI และ Compose v2
+# ติดตั้ง Docker CLI + compose-plugin (ไม่ติด engine)
 RUN apt-get update && apt-get install -y docker-ce-cli docker-compose-plugin
 
-# ✅ ให้ user jenkins เข้ากลุ่ม docker (สำคัญมาก!)
-RUN groupadd -for -g 999 docker \
-    && usermod -aG docker jenkins
+# รับค่า GID จาก build-arg (default 20)
+ARG DOCKER_GID=20
+
+# ถ้ามีกลุ่มที่มี GID นี้อยู่แล้ว -> ใช้ชื่อนั้น
+# ถ้าไม่มีกลุ่มที่มี GID นี้ -> สร้างกลุ่มชื่อ 'dockersock'
+# แล้วเพิ่ม user jenkins เข้าไปในกลุ่มนั้น
+RUN EXISTING_GROUP="$(getent group ${DOCKER_GID} | cut -d: -f1)" \
+ && if [ -n "$EXISTING_GROUP" ]; then \
+      echo "Found existing group '$EXISTING_GROUP' with GID ${DOCKER_GID}"; \
+      usermod -aG "$EXISTING_GROUP" jenkins; \
+    else \
+      echo "Creating group dockersock with GID ${DOCKER_GID}"; \
+      groupadd -g ${DOCKER_GID} dockersock && usermod -aG dockersock jenkins; \
+    fi
 
 USER jenkins
