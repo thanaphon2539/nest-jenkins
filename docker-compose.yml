@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile.jenkins
     image: jenkins-docker:lts # 👈 ตั้งชื่อใหม่
     container_name: jenkins
+    user: root 
     ports:
       - '8080:8080'
       - '50000:50000'
