@@ -16,8 +16,8 @@ services:
     container_name: nestapp
     command: ["pnpm", "start:prod"]
     volumes:
-      - .:/usr/src/app    # mount project root เข้า container
-      - /usr/src/app/node_modules
+      - .:/usr/src    # mount project root เข้า container
+      - /usr/src/node_modules
     ports:
       - "3005:3005"
     restart: unless-stopped
