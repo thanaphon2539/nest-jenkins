@@ -19,7 +19,7 @@ services:
       - .:/usr/src/app    # mount project root เข้า container
       - /usr/src/app/node_modules
     ports:
-      - "3000:3000"
+      - "3005:3005"
     restart: unless-stopped
 
 volumes:

@@ -50,7 +50,7 @@ pipeline {
                   echo "🚀 Start app simulation..."
                   nohup pnpm start:prod > app.log 2>&1 &
                   sleep 5
-                  curl -f http://localhost:3000 || echo "⚠️ App not responding"
+                  curl -f http://localhost:3005 || echo "⚠️ App not responding"
                 '''
             }
         }
