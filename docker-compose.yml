@@ -12,14 +12,11 @@ services:
     restart: unless-stopped
 
   nestapp:
-    build: .              # 🔑 root directory
+    build: .                # root ที่มี Dockerfile
     container_name: nestapp
     command: ["pnpm", "start:prod"]
-    volumes:
-      - .:/usr/src    # mount project root เข้า container
-      - /usr/src/node_modules
     ports:
-      - "3005:3005"
+      - "3005:3005"         # default ของ NestJS
     restart: unless-stopped
 
 volumes:
