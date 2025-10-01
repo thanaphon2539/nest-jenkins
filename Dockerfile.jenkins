@@ -23,4 +23,8 @@ RUN echo \
 # ติดตั้ง Docker CLI และ Compose v2
 RUN apt-get update && apt-get install -y docker-ce-cli docker-compose-plugin
 
+# ✅ ให้ user jenkins เข้ากลุ่ม docker (สำคัญมาก!)
+RUN groupadd -for -g 999 docker \
+    && usermod -aG docker jenkins
+
 USER jenkins
