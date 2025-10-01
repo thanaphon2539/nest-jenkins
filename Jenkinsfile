@@ -3,7 +3,7 @@ pipeline {
 
     triggers {
         // ✅ Trigger เวลา push commit หรือ tag (ถ้าใช้ GitHub/GitLab ให้ตั้ง webhook)
-        pollSCM('H/5 * * * *')
+        pollSCM('H/2 * * * *')
     }
 
     tools {
