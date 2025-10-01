@@ -58,7 +58,7 @@ pipeline {
                   echo "🚀 Deploying with Docker Compose..."
 
                   docker compose down --remove-orphans
-                  docker compose build nestapp
+                  docker compose build --no-cache nestapp
                   docker compose up -d nestapp
 
                   echo "🔍 Checking if app is healthy..."
