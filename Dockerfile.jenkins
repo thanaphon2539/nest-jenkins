@@ -2,9 +2,25 @@ FROM jenkins/jenkins:lts
 
 USER root
 
-# ติดตั้ง docker CLI + compose plugin
-RUN apt-get update && \
-    apt-get install -y docker.io docker-compose-plugin curl && \
-    rm -rf /var/lib/apt/lists/*
+# ติดตั้ง dependency พื้นฐาน
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    && rm -rf /var/lib/apt/lists/*
+
+# เพิ่ม Docker official GPG key
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | tee /etc/apt/keyrings/docker.asc > /dev/null \
+    && chmod a+r /etc/apt/keyrings/docker.asc
+
+# เพิ่ม repo ของ Docker
+RUN echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# ติดตั้ง Docker CLI และ Compose v2
+RUN apt-get update && apt-get install -y docker-ce-cli docker-compose-plugin
 
 USER jenkins
