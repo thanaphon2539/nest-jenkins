@@ -2,12 +2,12 @@ pipeline {
     agent any
 
     triggers {
-        // ✅ Trigger เวลา push commit หรือ tag (ถ้าใช้ GitHub/GitLab ให้ตั้ง webhook)
+        // ✅ Trigger ทุกครั้งที่ push หรือ tag (หรือจะใช้ webhook ก็ได้)
         pollSCM('H/2 * * * *')
     }
 
     tools {
-        nodejs "NodeJS-20"   // ชื่อต้องตรงกับที่ตั้งใน Jenkins
+        nodejs "NodeJS-20"   // ต้องตรงกับที่ตั้งค่าใน Jenkins
     }
 
     environment {
@@ -52,10 +52,28 @@ pipeline {
             steps {
                 sh '''
                   echo "🚀 Deploying with Docker Compose..."
-                  docker compose down
-                  docker compose build nestapp
+
+                  # ปิด container เก่าทั้งหมด
+                  docker compose down --remove-orphans
+
+                  # สร้าง image ใหม่
+                  docker compose build --no-cache nestapp
+
+                  # รัน container ใหม่
                   docker compose up -d nestapp
-                  echo "✅ App running at http://localhost:3005"
+
+                  echo "🔍 Checking if app is healthy..."
+                  for i in {1..10}; do
+                    if curl -f http://localhost:3005; then
+                      echo "✅ App is running!"
+                      exit 0
+                    fi
+                    echo "⏳ Waiting for app..."
+                    sleep 3
+                  done
+
+                  echo "❌ App failed to start"
+                  exit 1
                 '''
             }
         }
@@ -63,10 +81,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Build success!'
+            echo '✅ CI/CD pipeline finished successfully!'
         }
         failure {
-            echo '❌ Build failed!'
+            echo '❌ Build/Deploy pipeline failed!'
         }
     }
 }
