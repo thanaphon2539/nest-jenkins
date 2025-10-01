@@ -1,92 +1,54 @@
 pipeline {
     agent any
 
-    triggers {
-        // ✅ Poll SCM ทุก 2 นาที (หรือเปลี่ยนเป็น webhook จะดีกว่า)
-        pollSCM('H/2 * * * *')
-    }
-
-    tools {
-        nodejs "NodeJS-20"
-    }
-
     environment {
-        PNPM_HOME = "$HOME/.local/share/pnpm"
-        PATH = "$PNPM_HOME:$PATH"
+        // ให้ Jenkins ใช้ Docker API ผ่าน TCP แทน socket
+        DOCKER_HOST = "tcp://host.docker.internal:2375"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout([$class: 'GitSCM',
-                branches: [[name: '*/main']],
-                doGenerateSubmoduleConfigurations: false,
-                extensions: [[$class: 'WipeWorkspace']],   // เคลียร์ก่อน
-                userRemoteConfigs: [[url: 'https://github.com/thanaphon2539/nest-jenkins.git']]
-                ])
+                checkout scm
             }
         }
 
-
-        stage('Install Dependencies') {
-            steps {
-                sh 'corepack enable'
-                sh 'pnpm install'
-            }
-        }
-
-        stage('Lint') {
-            steps {
-                sh 'pnpm lint'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                sh 'pnpm build'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                sh 'pnpm test'
-            }
-        }
-
-        stage('Deploy Local Container') {
+        stage('Build nestapp image') {
             steps {
                 sh '''
-                set -e
-                echo "🚀 Deploying with Docker Compose..."
-
-                docker compose down --remove-orphans
-                docker compose build --no-cache nestapp
-                docker compose up -d nestapp
-
-                echo "🔍 Checking if app is healthy..."
-                for i in {1..10}; do
-                    if curl -f http://localhost:3005/health; then
-                    echo "✅ App is running!"
-                    exit 0
-                    fi
-                    echo "⏳ Waiting for app..."
-                    sleep 3
-                done
-
-                echo "❌ App failed to start"
-                exit 1
+                  echo "🐳 Building Docker image for NestJS app..."
+                  docker build -t nestapp:latest .
                 '''
             }
         }
 
+        stage('Run container') {
+            steps {
+                sh '''
+                  echo "🚀 Starting container..."
+                  docker rm -f nestapp || true
+                  docker run -d --name nestapp -p 3005:3005 nestapp:latest
+                '''
+            }
+        }
+
+        stage('Verify container') {
+            steps {
+                sh '''
+                  echo "🔍 Checking container health..."
+                  sleep 5
+                  curl -f http://localhost:3005 || exit 1
+                '''
+            }
+        }
     }
 
     post {
         success {
-            echo '✅ CI/CD pipeline finished successfully!'
+            echo "✅ Deployment successful!"
         }
         failure {
-            echo '❌ Build/Deploy pipeline failed!'
+            echo "❌ Deployment failed!"
         }
     }
 }

@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile.jenkins
     image: jenkins-docker:lts
     container_name: jenkins
-    user: root
+    user: jenkins
     environment:
       DOCKER_HOST: tcp://host.docker.internal:2375
     ports:
