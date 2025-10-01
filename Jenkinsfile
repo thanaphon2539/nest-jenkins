@@ -7,7 +7,7 @@ pipeline {
     }
 
     tools {
-    nodejs "NodeJS-20"   // ชื่อต้องตรงกับที่ตั้งใน Jenkins
+        nodejs "NodeJS-20"   // ชื่อต้องตรงกับที่ตั้งใน Jenkins
     }
 
     environment {
@@ -48,23 +48,15 @@ pipeline {
             }
         }
 
-        stage('Deploy Local Simulation') {
+        stage('Deploy Local Container') {
             steps {
                 sh '''
-                  echo "🚀 Start app simulation..."
-                  nohup pnpm start:prod > app.log 2>&1 &
-                  sleep 5
-                  curl -f http://localhost:3005 || echo "⚠️ App not responding"
+                  echo "🚀 Deploying with Docker Compose..."
+                  docker compose down
+                  docker compose build nestapp
+                  docker compose up -d nestapp
+                  echo "✅ App running at http://localhost:3005"
                 '''
-            }
-        }
-
-        stage('Deploy Only On Tag') {
-            when {
-                buildingTag()
-            }
-            steps {
-                echo "📦 Deploying release tag ${env.GIT_TAG}"
             }
         }
     }
