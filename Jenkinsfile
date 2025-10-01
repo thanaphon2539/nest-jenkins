@@ -18,7 +18,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'origin/main',
+                git branch: 'main',
                     url: 'https://github.com/thanaphon2539/nest-jenkins.git'
             }
         }
@@ -49,33 +49,31 @@ pipeline {
         }
 
         stage('Deploy Local Container') {
-            when {
-                branch 'origin/main'
-            }
             steps {
                 sh '''
-                  set -e
-                  echo "🚀 Deploying with Docker Compose..."
+                set -e
+                echo "🚀 Deploying with Docker Compose..."
 
-                  docker compose down --remove-orphans
-                  docker compose build --no-cache nestapp
-                  docker compose up -d nestapp
+                docker compose down --remove-orphans
+                docker compose build --no-cache nestapp
+                docker compose up -d nestapp
 
-                  echo "🔍 Checking if app is healthy..."
-                  for i in {1..10}; do
+                echo "🔍 Checking if app is healthy..."
+                for i in {1..10}; do
                     if curl -f http://localhost:3005/health; then
-                      echo "✅ App is running!"
-                      exit 0
+                    echo "✅ App is running!"
+                    exit 0
                     fi
                     echo "⏳ Waiting for app..."
                     sleep 3
-                  done
+                done
 
-                  echo "❌ App failed to start"
-                  exit 1
+                echo "❌ App failed to start"
+                exit 1
                 '''
             }
         }
+
     }
 
     post {
