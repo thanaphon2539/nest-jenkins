@@ -2,12 +2,12 @@ pipeline {
     agent any
 
     triggers {
-        // ✅ Trigger ทุกครั้งที่ push หรือ tag (หรือจะใช้ webhook ก็ได้)
+        // ✅ Poll SCM ทุก 2 นาที (หรือเปลี่ยนเป็น webhook จะดีกว่า)
         pollSCM('H/2 * * * *')
     }
 
     tools {
-        nodejs "NodeJS-20"   // ต้องตรงกับที่ตั้งค่าใน Jenkins
+        nodejs "NodeJS-20"
     }
 
     environment {
@@ -49,22 +49,21 @@ pipeline {
         }
 
         stage('Deploy Local Container') {
+            when {
+                branch 'main'
+            }
             steps {
                 sh '''
+                  set -e
                   echo "🚀 Deploying with Docker Compose..."
 
-                  # ปิด container เก่าทั้งหมด
                   docker compose down --remove-orphans
-
-                  # สร้าง image ใหม่
-                  docker compose build --no-cache nestapp
-
-                  # รัน container ใหม่
+                  docker compose build nestapp
                   docker compose up -d nestapp
 
                   echo "🔍 Checking if app is healthy..."
                   for i in {1..10}; do
-                    if curl -f http://localhost:3005; then
+                    if curl -f http://localhost:3005/health; then
                       echo "✅ App is running!"
                       exit 0
                     fi
