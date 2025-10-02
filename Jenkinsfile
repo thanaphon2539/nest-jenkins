@@ -1,54 +1,98 @@
 pipeline {
     agent any
 
+    triggers {
+        // ✅ Poll SCM ทุก 2 นาที (หรือเปลี่ยนเป็น webhook จะดีกว่า)
+        pollSCM('H/2 * * * *')
+    }
+
+    tools {
+        nodejs "NodeJS-20"
+    }
+
     environment {
-        // ให้ Jenkins ใช้ Docker API ผ่าน TCP แทน socket
-        DOCKER_HOST = "tcp://host.docker.internal:2375"
+        PNPM_HOME = "$HOME/.local/share/pnpm"
+        PATH = "$PNPM_HOME:$PATH"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'main',
+                    url: 'https://github.com/thanaphon2539/nest-jenkins.git'
             }
         }
 
-        stage('Build nestapp image') {
+        stage('Install Dependencies') {
             steps {
-                sh '''
-                  echo "🐳 Building Docker image for NestJS app..."
-                  docker build -t nestapp:latest .
-                '''
+                sh 'corepack enable'
+                sh 'pnpm install'
             }
         }
 
-        stage('Run container') {
+        stage('Lint') {
             steps {
-                sh '''
-                  echo "🚀 Starting container..."
-                  docker rm -f nestapp || true
-                  docker run -d --name nestapp -p 3005:3005 nestapp:latest
-                '''
+                sh 'pnpm lint'
             }
         }
 
-        stage('Verify container') {
+        stage('Build') {
             steps {
-                sh '''
-                  echo "🔍 Checking container health..."
-                  sleep 5
-                  curl -f http://localhost:3005 || exit 1
-                '''
+                sh 'pnpm build'
             }
         }
+
+        stage('Test') {
+            steps {
+                sh 'pnpm test'
+            }
+        }
+
+        stage('Deploy Local Container') {
+            steps {
+                // เปลี่ยนโฟลเดอร์เป็น workspace (ที่มี docker-compose.yml)
+                dir("${env.WORKSPACE}") {
+                sh '''
+                    set -e
+                    echo "🚀 Deploying with Docker Compose..."
+                    # show where we are and files
+                    pwd
+                    ls -la
+
+                    # bring down previous
+                    docker compose down --remove-orphans || true
+
+                    # build image with logs visible
+                    docker compose build --no-cache --progress=plain nestapp
+
+                    # bring up: force recreate to ensure new image used
+                    docker compose up -d --force-recreate --no-deps --build nestapp
+
+                    # wait for health
+                    for i in $(seq 1 10); do
+                    if curl -sSf http://localhost:3005/health; then
+                        echo "✅ App is healthy"
+                        exit 0
+                    fi
+                    echo "⏳ Waiting for app..."
+                    sleep 3
+                    done
+                    echo "❌ App failed to start"
+                    exit 1
+                '''
+                }
+            }
+        }
+
+
     }
 
     post {
         success {
-            echo "✅ Deployment successful!"
+            echo '✅ CI/CD pipeline finished successfully!'
         }
         failure {
-            echo "❌ Deployment failed!"
+            echo '❌ Build/Deploy pipeline failed!'
         }
     }
 }

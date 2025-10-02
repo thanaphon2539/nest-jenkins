@@ -4,22 +4,23 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.jenkins
+      args:
+        DOCKER_GID: 20   # เปลี่ยนเป็นค่า GID ที่คุณเจอจาก ls -ln
     image: jenkins-docker:lts
     container_name: jenkins
-    user: jenkins
-    environment:
-      DOCKER_HOST: tcp://host.docker.internal:2375
     ports:
       - "8080:8080"
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
+      - /Users/fongbeer/.docker/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
 
   nestapp:
     build: .
     container_name: nestapp
-    command: ['pnpm', 'start:prod']
+    # สำหรับการ deploy จาก CI เราไม่ mount source (ใช้ image)
+    # command: ['pnpm', 'start:prod']
     ports:
       - "3005:3005"
     restart: unless-stopped
