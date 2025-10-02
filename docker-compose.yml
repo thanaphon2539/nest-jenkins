@@ -16,11 +16,13 @@ services:
 
   nestapp:
     build: .
+    image: nestapp:latest   # ✅ กำหนดชื่อ image ให้คงที่
     container_name: nestapp
     command: ['pnpm', 'start:prod']
     ports:
       - "3005:3005"
     restart: unless-stopped
+
 
 volumes:
   jenkins_home:

@@ -11,8 +11,8 @@ RUN apt-get update && apt-get install -y \
     git \
     procps \
     && rm -rf /var/lib/apt/lists/*
-    
-# GIT
+
+# Git safe directory
 RUN git config --system --add safe.directory '*'
 
 # Docker CLI + Compose
@@ -24,7 +24,10 @@ RUN mkdir -p /etc/apt/keyrings \
 
 RUN apt-get update && apt-get install -y docker-ce-cli docker-compose-plugin && rm -rf /var/lib/apt/lists/*
 
-# git safe directory (แก้ error fatal: not in a git directory)
-RUN git config --system --add safe.directory '*'
+# ✅ ติดตั้ง Node + corepack + pnpm ตรงนี้เลย
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && corepack enable \
+    && npm install -g pnpm
 
 USER jenkins
