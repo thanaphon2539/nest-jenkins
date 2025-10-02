@@ -8,9 +8,11 @@ RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
     lsb-release \
+    git \
     procps \
     && rm -rf /var/lib/apt/lists/*
-
+    
+# GIT
 RUN git config --system --add safe.directory '*'
 
 # Docker CLI + Compose
@@ -22,11 +24,7 @@ RUN mkdir -p /etc/apt/keyrings \
 
 RUN apt-get update && apt-get install -y docker-ce-cli docker-compose-plugin && rm -rf /var/lib/apt/lists/*
 
-# --- 🔑 จุดสำคัญ: ทำให้ user jenkins join group เดียวกับ docker.sock ---
-ARG DOCKER_GID=20
-RUN if ! getent group ${DOCKER_GID}; then \
-      groupadd -g ${DOCKER_GID} dockersock; \
-    fi \
-    && usermod -aG ${DOCKER_GID} jenkins
+# git safe directory (แก้ error fatal: not in a git directory)
+RUN git config --system --add safe.directory '*'
 
 USER jenkins
