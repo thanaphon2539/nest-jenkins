@@ -22,7 +22,9 @@ RUN apt-get update && apt-get install -y docker-ce-cli docker-compose-plugin && 
 
 # --- 🔑 จุดสำคัญ: ทำให้ user jenkins join group เดียวกับ docker.sock ---
 ARG DOCKER_GID=20
-RUN groupadd -g ${DOCKER_GID} dockersock || true \
+RUN if ! getent group ${DOCKER_GID}; then \
+      groupadd -g ${DOCKER_GID} dockersock; \
+    fi \
     && usermod -aG ${DOCKER_GID} jenkins
 
 USER jenkins
