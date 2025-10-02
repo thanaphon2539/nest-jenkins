@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs "NodeJS-20"
-    }
-
     environment {
         PNPM_HOME = "$HOME/.local/share/pnpm"
         PATH = "$PNPM_HOME:$PATH"
