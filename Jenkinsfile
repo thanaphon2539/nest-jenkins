@@ -46,9 +46,29 @@ pipeline {
             steps {
                 dir("${env.WORKSPACE}") {
                     sh '''
-                    echo "🚀 Deploying nestapp with Docker Compose (using DinD)..."
+                    echo "🚀 Force rebuild & redeploy nestapp (using DinD)..."
+
+                    # หยุดและลบ container/service เก่าก่อน
                     docker compose down --remove-orphans || true
-                    docker compose up -d --build nestapp
+
+                    # build image ใหม่ทุกครั้ง (ไม่ใช้ cache)
+                    docker compose build --no-cache nestapp
+
+                    # บังคับ recreate container จาก image ล่าสุด
+                    docker compose up -d --force-recreate --no-deps nestapp
+
+                    echo "⏳ Waiting for nestapp health check..."
+                    for i in $(seq 1 10); do
+                    if curl -sSf http://localhost:3005/health; then
+                        echo "✅ nestapp is healthy"
+                        exit 0
+                    fi
+                    echo "⏳ Waiting..."
+                    sleep 3
+                    done
+
+                    echo "❌ nestapp failed to start"
+                    exit 1
                     '''
                 }
             }
