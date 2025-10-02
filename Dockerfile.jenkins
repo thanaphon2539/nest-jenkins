@@ -1,32 +1,28 @@
-# Dockerfile.jenkins
 FROM jenkins/jenkins:lts
 
 USER root
 
+# ติดตั้ง dependencies
 RUN apt-get update && apt-get install -y \
-    ca-certificates curl gnupg lsb-release \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
-# Docker repo key (needed if you want docker CLI)
+# Docker CLI + Compose
 RUN mkdir -p /etc/apt/keyrings \
- && curl -fsSL https://download.docker.com/linux/debian/gpg | tee /etc/apt/keyrings/docker.asc > /dev/null \
- && chmod a+r /etc/apt/keyrings/docker.asc \
- && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
-    | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | tee /etc/apt/keyrings/docker.asc > /dev/null \
+    && chmod a+r /etc/apt/keyrings/docker.asc \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
+       | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-RUN apt-get update && apt-get install -y docker-ce-cli docker-compose-plugin
+RUN apt-get update && apt-get install -y docker-ce-cli docker-compose-plugin && rm -rf /var/lib/apt/lists/*
 
+# --- 🔑 จุดสำคัญ: ทำให้ user jenkins join group เดียวกับ docker.sock ---
 ARG DOCKER_GID=20
-
-# ถ้ามี group ที่ใช้ GID นี้อยู่แล้ว ให้เอาชื่อกลุ่มนั้นมาใช้
-# ถ้าไม่มี ให้สร้างกลุ่มใหม่ชื่อ dockersock
-RUN EXISTING_GROUP="$(getent group ${DOCKER_GID} | cut -d: -f1)" \
- && if [ -n "$EXISTING_GROUP" ]; then \
-      echo "Found existing group '$EXISTING_GROUP' with GID ${DOCKER_GID}"; \
-      usermod -aG "$EXISTING_GROUP" jenkins; \
-    else \
-      echo "Creating group dockersock with GID ${DOCKER_GID}"; \
-      groupadd -g ${DOCKER_GID} dockersock && usermod -aG dockersock jenkins; \
-    fi
+RUN groupadd -g ${DOCKER_GID} dockersock || true \
+    && usermod -aG ${DOCKER_GID} jenkins
 
 USER jenkins
