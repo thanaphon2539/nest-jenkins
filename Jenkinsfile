@@ -15,6 +15,18 @@ pipeline {
     }
 
     stages {
+        stage('Clean Workspace') {
+            steps {
+                deleteDir()
+            }
+        }
+
+        stage('Prepare Git Safe Directory') {
+            steps {
+                sh 'git config --global --add safe.directory "*"'
+            }
+        }
+
         stage('Fix Workspace Permissions') {
             steps {
                 sh 'chown -R root:root $WORKSPACE'
@@ -23,8 +35,11 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/thanaphon2539/nest-jenkins.git'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/thanaphon2539/nest-jenkins.git']]
+                ])
             }
         }
 
