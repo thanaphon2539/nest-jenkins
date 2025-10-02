@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     triggers {
-        // ✅ Poll SCM ทุก 2 นาที (หรือเปลี่ยนเป็น webhook จะดีกว่า)
         pollSCM('H/2 * * * *')
     }
 
@@ -16,6 +15,12 @@ pipeline {
     }
 
     stages {
+        stage('Fix Workspace Permissions') {
+            steps {
+                sh 'chown -R root:root $WORKSPACE'
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git branch: 'main',
@@ -47,7 +52,7 @@ pipeline {
                 sh 'pnpm test'
             }
         }
-        
+
         stage('Debug Docker Access') {
             steps {
                 sh '''
@@ -64,41 +69,31 @@ pipeline {
 
         stage('Deploy Local Container') {
             steps {
-                // เปลี่ยนโฟลเดอร์เป็น workspace (ที่มี docker-compose.yml)
                 dir("${env.WORKSPACE}") {
-                sh '''
+                    sh '''
                     set -e
                     echo "🚀 Deploying with Docker Compose..."
-                    # show where we are and files
                     pwd
                     ls -la
 
-                    # bring down previous
                     docker compose down --remove-orphans || true
-
-                    # build image with logs visible
                     docker compose build --no-cache --progress=plain nestapp
-
-                    # bring up: force recreate to ensure new image used
                     docker compose up -d --force-recreate --no-deps --build nestapp
 
-                    # wait for health
                     for i in $(seq 1 10); do
-                    if curl -sSf http://localhost:3005/health; then
+                      if curl -sSf http://localhost:3005/; then
                         echo "✅ App is healthy"
                         exit 0
-                    fi
-                    echo "⏳ Waiting for app..."
-                    sleep 3
+                      fi
+                      echo "⏳ Waiting for app..."
+                      sleep 3
                     done
                     echo "❌ App failed to start"
                     exit 1
-                '''
+                    '''
                 }
             }
         }
-
-
     }
 
     post {
