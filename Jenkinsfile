@@ -59,7 +59,7 @@ pipeline {
 
                     echo "⏳ Waiting for nestapp health check..."
                     for i in $(seq 1 10); do
-                    if curl -sSf http://localhost:3005/health; then
+                    if curl -sSf http://localhost:3005; then
                         echo "✅ nestapp is healthy"
                         exit 0
                     fi
