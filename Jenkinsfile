@@ -34,10 +34,9 @@ pipeline {
         stage('Test Docker Connection') {
             steps {
                 sh '''
-                echo "🔍 Testing Docker-in-Docker connection..."
+                echo "🔍 Testing Docker (Host socket)..."
                 docker version
-                docker info
-                docker ps -a
+                docker ps
                 '''
             }
         }
@@ -46,29 +45,9 @@ pipeline {
             steps {
                 dir("${env.WORKSPACE}") {
                     sh '''
-                    echo "🚀 Force rebuild & redeploy nestapp (using DinD)..."
-
-                    # หยุดและลบ container/service เก่าก่อน
+                    echo "🚀 Deploy nestapp with Host Docker..."
                     docker compose down --remove-orphans || true
-
-                    # build image ใหม่ทุกครั้ง (ไม่ใช้ cache)
-                    docker compose build --no-cache nestapp
-
-                    # บังคับ recreate container จาก image ล่าสุด
-                    docker compose up -d --force-recreate --no-deps nestapp
-
-                    echo "⏳ Waiting for nestapp health check..."
-                    for i in $(seq 1 10); do
-                    if curl -sSf http://localhost:3005; then
-                        echo "✅ nestapp is healthy"
-                        exit 0
-                    fi
-                    echo "⏳ Waiting..."
-                    sleep 3
-                    done
-
-                    echo "❌ nestapp failed to start"
-                    exit 1
+                    docker compose up -d --build nestapp
                     '''
                 }
             }
