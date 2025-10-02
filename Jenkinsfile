@@ -46,7 +46,7 @@ pipeline {
                 dir("${env.WORKSPACE}") {
                     sh '''
                     echo "🚀 Deploy nestapp with Host Docker..."
-                    docker compose down --remove-orphans || true
+                    docker compose stop nestapp
                     docker compose up -d --build nestapp
                     '''
                 }
