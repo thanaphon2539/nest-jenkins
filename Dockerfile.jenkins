@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y docker-ce-cli docker-compose-plugin && 
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && corepack enable \
-    && npm install -g pnpm
+    && rm -f /usr/bin/pnpx /usr/local/bin/pnpx || true \
+    && npm install -g pnpm --force
 
 USER jenkins
