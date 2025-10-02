@@ -16,7 +16,7 @@ services:
 
   nestapp:
     build: .
-    image: nestapp:latest   # ✅ กำหนดชื่อ image ให้คงที่
+    image: nestapp:${APP_VERSION:-latest}   # ✅ กำหนดชื่อ image ให้คงที่
     container_name: nestapp
     command: ['pnpm', 'start:prod']
     ports:

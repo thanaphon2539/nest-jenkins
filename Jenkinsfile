@@ -18,10 +18,30 @@ pipeline {
             }
         }
 
+        stage('Check Tag') {
+            steps {
+                script {
+                    // หา tag ที่ตรงกับ commit ปัจจุบัน
+                    def tag = sh(returnStdout: true, script: "git describe --tags --exact-match || true").trim()
+
+                    if (tag == "") {
+                        echo "❌ ไม่มี tag -> ข้ามขั้นตอน Deploy"
+                        env.SKIP_DEPLOY = "true"
+                    } else {
+                        echo "✅ พบ tag: ${tag}"
+                        env.APP_VERSION = tag
+                        env.SKIP_DEPLOY = "false"
+                    }
+                }
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
-                sh 'corepack enable'
-                sh 'pnpm install'
+                sh '''
+                corepack enable || true
+                pnpm install
+                '''
             }
         }
 
@@ -34,7 +54,7 @@ pipeline {
         stage('Test Docker Connection') {
             steps {
                 sh '''
-                echo "🔍 Testing Docker-in-Docker connection..."
+                echo "🔍 Testing Docker connection..."
                 docker version
                 docker info
                 docker ps -a
@@ -43,13 +63,19 @@ pipeline {
         }
 
         stage('Deploy Local Container') {
+            when {
+                expression { env.SKIP_DEPLOY == "false" }
+            }
             steps {
                 dir("${env.WORKSPACE}") {
                     sh '''
-                    echo "🚀 Clean up old container if exists..."
+                    echo "🚀 Deploying app version ${APP_VERSION} ..."
                     docker rm -f nestapp || true
 
-                    echo "🚀 Force rebuild & redeploy nestapp..."
+                    # build image พร้อม tag
+                    docker build -t nestapp:${APP_VERSION} .
+
+                    # run ด้วย docker compose (ใช้ image ตาม tag)
                     docker compose up -d --build nestapp
                     '''
                 }
