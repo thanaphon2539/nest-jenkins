@@ -34,9 +34,10 @@ pipeline {
         stage('Test Docker Connection') {
             steps {
                 sh '''
-                echo "🔍 Testing Docker (Host socket)..."
+                echo "🔍 Testing Docker-in-Docker connection..."
                 docker version
-                docker ps
+                docker info
+                docker ps -a
                 '''
             }
         }
@@ -45,8 +46,11 @@ pipeline {
             steps {
                 dir("${env.WORKSPACE}") {
                     sh '''
-                    echo "🚀 Deploy nestapp with Host Docker..."
-                    docker compose stop nestapp
+                    echo "🚀 Clean up old container if exists..."
+                    docker rm -f nestapp || true
+
+                    echo "🚀 Force rebuild & redeploy nestapp..."
+                    docker compose down --remove-orphans || true
                     docker compose up -d --build nestapp
                     '''
                 }
