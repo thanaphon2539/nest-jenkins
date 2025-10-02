@@ -13,19 +13,26 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/thanaphon2539/nest-jenkins.git'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/thanaphon2539/nest-jenkins.git']],
+                    extensions: [
+                        [$class: 'CloneOption', noTags: false, shallow: false]
+                    ]
+                ])
+                sh "git fetch --tags"  // 🔑 ดึง tag มาด้วย
             }
         }
 
         stage('Check Tag') {
             steps {
                 script {
-                    // หา tag ที่ตรงกับ commit ปัจจุบัน
+                    sh "git fetch --tags"   // ✅ กันเหนียวอีกชั้น
                     def tag = sh(returnStdout: true, script: "git describe --tags --exact-match || true").trim()
 
                     if (tag == "") {
-                        echo "❌ ไม่มี tag -> ข้ามขั้นตอน Deploy"
+                        echo "❌ ไม่มี tag -> ข้าม Deploy"
                         env.SKIP_DEPLOY = "true"
                     } else {
                         echo "✅ พบ tag: ${tag}"
@@ -35,6 +42,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('Install Dependencies') {
             steps {
