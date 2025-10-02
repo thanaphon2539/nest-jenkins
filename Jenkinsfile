@@ -50,7 +50,6 @@ pipeline {
                     docker rm -f nestapp || true
 
                     echo "🚀 Force rebuild & redeploy nestapp..."
-                    docker compose down --remove-orphans || true
                     docker compose up -d --build nestapp
                     '''
                 }
