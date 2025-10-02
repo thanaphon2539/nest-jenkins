@@ -7,6 +7,7 @@ services:
       args:
         DOCKER_GID: ${DOCKER_GID}   # 👈 ส่งค่า gid ตอน build
     image: jenkins-docker:lts
+    user: root
     container_name: jenkins
     ports:
       - "8080:8080"
