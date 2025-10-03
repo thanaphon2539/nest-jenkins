@@ -1,6 +1,17 @@
 pipeline {
     agent any
 
+    parameters {
+        gitParameter name: 'TAG_NAME',
+            type: 'PT_TAG',
+            defaultValue: 'v1.0.0',
+            description: 'เลือก tag ที่ต้องการ deploy',
+            branch: '',
+            sortMode: 'DESCENDING_SMART',
+            selectedValue: 'DEFAULT',
+            useRepository: 'https://github.com/thanaphon2539/nest-jenkins.git'
+    }
+
     tools {
         nodejs "NodeJS-20"
     }
@@ -11,35 +22,14 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+         stage('Checkout') {
             steps {
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[name: '*/main']],
+                    branches: [[name: "refs/tags/${params.TAG_NAME}"]],
                     userRemoteConfigs: [[url: 'https://github.com/thanaphon2539/nest-jenkins.git']],
-                    extensions: [
-                        [$class: 'CloneOption', noTags: false, shallow: false]
-                    ]
+                    extensions: [[$class: 'CloneOption', noTags: false, shallow: false]]
                 ])
-                sh "git fetch --tags"  // 🔑 ดึง tag มาด้วย
-            }
-        }
-
-        stage('Check Tag') {
-            steps {
-                script {
-                    sh "git fetch --tags"   // ✅ กันเหนียวอีกชั้น
-                    def tag = sh(returnStdout: true, script: "git describe --tags --exact-match || true").trim()
-
-                    if (tag == "") {
-                        echo "❌ ไม่มี tag -> ข้าม Deploy"
-                        env.SKIP_DEPLOY = "true"
-                    } else {
-                        echo "✅ พบ tag: ${tag}"
-                        env.APP_VERSION = tag
-                        env.SKIP_DEPLOY = "false"
-                    }
-                }
             }
         }
 
