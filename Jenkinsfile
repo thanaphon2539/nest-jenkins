@@ -36,8 +36,13 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'corepack enable || true'
-                sh 'pnpm install'
+                sh '''
+                export PATH=$PNPM_HOME:$PATH
+                corepack enable
+                corepack prepare pnpm@latest --activate
+                npm install -g pnpm
+                pnpm install
+                '''
             }
         }
 
