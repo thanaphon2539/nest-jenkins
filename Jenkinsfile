@@ -61,9 +61,6 @@ pipeline {
         }
 
         stage('Deploy Local Container') {
-            when {
-                expression { env.SKIP_DEPLOY == "false" }
-            }
             steps {
                 dir("${env.WORKSPACE}") {
                     sh '''
