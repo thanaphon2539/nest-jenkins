@@ -62,17 +62,20 @@ pipeline {
 
         stage('Deploy Local Container') {
             steps {
+                script {
+                    env.APP_VERSION = params.TAG_NAME   // ✅ map ค่า TAG_NAME -> APP_VERSION
+                }
                 dir("${env.WORKSPACE}") {
-                    sh '''
+                    sh """
                     echo "🚀 Deploying app version ${APP_VERSION} ..."
                     docker rm -f nestapp || true
 
                     # build image พร้อม tag
                     docker build -t nestapp:${APP_VERSION} .
 
-                    # run ด้วย docker compose (ใช้ image ตาม tag)
-                    docker compose up -d --build nestapp
-                    '''
+                    # run container ใช้ image ตาม tag
+                    docker run -d --name nestapp -p 3005:3005 nestapp:${APP_VERSION}
+                    """
                 }
             }
         }
